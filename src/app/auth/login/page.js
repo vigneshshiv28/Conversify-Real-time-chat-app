@@ -2,7 +2,9 @@
 import styles from '../../../styles.module.css';
 import {z} from 'zod';
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form"
+import { useForm } from "react-hook-form";
+import { useRouter } from 'next/navigation';
+import useUserStore from '../../../store/userStore.js'
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email").min(1, "Email is required"),
@@ -11,15 +13,50 @@ const loginSchema = z.object({
 
 
 export default function LoginForm  () {
+
+  const router = useRouter();
+  const {setUser} = useUserStore();
   const {
     register,
+    setError,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm({ resolver: zodResolver(loginSchema) });
 
   
-
-  const onSubmit = (data) => console.log(data);
+  const onSubmit = async (data) => {
+      reset();
+      try {
+        const response = await fetch('http://localhost:3001/api/auth/login', {
+          method: 'POST',
+          credentials: "include",
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        });
+    
+        const result = await response.json();
+        console.log(result);
+    
+        if (response.ok) {
+          if (result.loggedIn) {
+            console.log("logged in");
+            localStorage.setItem('token', result.token);
+            setUser(result.user);
+            reset();
+            router.push('/chat');
+          }
+        } else {
+          console.log("error1: " + response.status);
+          throw { status: response.status, message: result.message };
+        }
+      } catch (error) {
+        console.log("error: " + error.status);
+        setError('root', { type: 'manual', message: error.message }); 
+      }  
+  };
 
     return (
         <div className=" bg-violet-700 h-full flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
@@ -32,10 +69,10 @@ export default function LoginForm  () {
               Login
             </h1>
             <form className="space-y-4 md:space-y-6" onSubmit={handleSubmit(onSubmit)} >
+              {errors.root && <p className="text-red-600">{errors.root.message}</p>}
               <div>
                 <label htmlFor="email" className="block mb-2 mr-3 text-base font-medium text-violet-700">Email</label>
-                <input 
-                   
+                <input  
                   name="email" 
                   id="email" 
                   className="font-kanit font-bold w-full text-white bg-black border-gray-400 border-4 border-double px-3 py-1 transition-all duration-300 focus:border-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-700 focus:ring-opacity-50" 
@@ -50,7 +87,7 @@ export default function LoginForm  () {
                   type="password"
                   name="password" 
                   id="password" 
-                  placeholder="••••••••" 
+                   
                   {...register("password")}
                   errors={errors.password}
                   className="font-kanit font-bold w-full text-white bg-black border-gray-400 border-4 border-double px-3 py-1 transition-all duration-300 focus:border-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-700 focus:ring-opacity-50" 
@@ -83,3 +120,44 @@ export default function LoginForm  () {
        
     )
 }
+
+
+/*
+try{
+        const response = await fetch(`http://localhost:3001/api/auth/login`, {
+        method: 'POST',
+        credentials: "include",
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+        })
+        
+        const result = response.json();
+        console.log(result);
+        console.log("here");
+        console.log(response.ok);
+        console.log("message:");
+        console.log(response.json());
+        
+        if (!response.ok){
+          
+          if (response.status === 400) {
+              setError('email', { type: 'manual', message: result.message });
+              setError('password', { type: 'manual', message: result.message });
+          } else if (response.status === 404) {
+              setError('email', { type: 'manual', message: result.message });
+          }
+          
+        }
+        
+        if (result.loggedIn) {
+          console.log("logged in")
+          localStorage.setItem('token', result.token);
+          reset();
+          router.push('/chat');
+        }
+      } catch (error) {
+        setError('root', { type: 'manual', message: {error} });
+      }
+*/

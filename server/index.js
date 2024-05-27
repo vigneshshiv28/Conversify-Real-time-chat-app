@@ -5,9 +5,13 @@ import helmet from 'helmet';
 import cors from 'cors';
 import authRoute from './router/auth.js';
 import dotenv from 'dotenv';
-import { sessionConfig, wrap, corsConfig} from "./controllers/sessionConfig.js";
+import { sessionConfig, wrap,corsConfig} from "./controllers/sessionConfig.js";
 import {authorizeUser, initalizeUser, addFriend, onDisconnect} from "./controllers/socketControllers.js";
+import {chat} from "./controllers/chat.js";
 
+
+dotenv.config();
+console.log(corsConfig);
 
 const app = express();
 const server  = http.createServer(app);
@@ -15,13 +19,16 @@ const io = new Server(server,{
   cors:corsConfig
 });
 
-dotenv.config();
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
-app.use(helmet.crossOriginResourcePolicy({policy: "cross-origin"}));
-app.use(cors({corsConfig}));
-app.use(sessionConfig)
+
+
+app.use(cors(corsConfig));
+
+
+app.use(sessionConfig);
 
 app.use('/api/auth',authRoute);
 
@@ -41,6 +48,10 @@ io.on('connection',(socket)=>{
   io.on("addRequest",(friendName,cb)=>{
     addFriend(socket,friendName,cb);
   });
+
+  io.on("chat",(socket,message)=>{
+    chat(socket,message);
+  })
 
   io.on('disconnect',() => onDisconnect(socket));
 })

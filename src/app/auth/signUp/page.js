@@ -1,7 +1,10 @@
+"use client";
 import styles from '../../../styles.module.css';
 import {z} from 'zod';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form"
+import { useRouter } from 'next/navigation';
+import useUserStore from '../../../store/userStore.js'
 
 const signUpSchema = z.object({
     email: z.string().email("Invalid email").min(1, "Email is required"),
@@ -9,13 +12,48 @@ const signUpSchema = z.object({
     password: z.string().min(6, "Password must be at least 6 characters long"),
   });
 
-
 export default function SignUpForm  () {
+    const router = useRouter();
+    const {setUser} = useUserStore();
+
     const {
         register,
+        setError,
         handleSubmit,
+        reset,
         formState: { errors },
-      } = useForm({ resolver: zodResolver(loginSchema) });
+      } = useForm({ resolver: zodResolver(signUpSchema) });
+
+    const onSubmit = async(data) => {
+        reset();
+        try{
+            const response = await fetch(`http://localhost:3001/api/auth/signUp`, {
+            method: 'POST',
+            credentials: "include",
+            headers: {
+            'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+            })
+            console.log(response);
+            const result = await response.json();
+
+            if (response.ok){
+            if (result.loggedIn){
+                localStorage.setItem('token', data.token);
+                setUser(result.user);
+                router.push('/chat');
+            }
+            } else {
+            console.log("error1: " + response.status);
+            throw { status: response.status, message: result.message };
+            } 
+        } catch (error) {            
+            setError('root', { type: 'manual', message: error.message });
+            return;
+        }
+    };  
+    
 
     return (
       
@@ -28,7 +66,8 @@ export default function SignUpForm  () {
                 <h1 className="text-xl font-bold leading-tight tracking-tight text-violet-700 md:text-2xl ">
                 Sign Up
                 </h1>
-                <form className="space-y-4 md:space-y-6" >
+                <form className="space-y-4 md:space-y-6" onSubmit={handleSubmit(onSubmit)}>
+                {errors.root && <p className="text-red-600">{errors.root.message}</p>}    
                 <div>
                     <label htmlFor="email" className="block mb-2 mr-3 text-base font-medium text-violet-700">Email</label>
                     <input 

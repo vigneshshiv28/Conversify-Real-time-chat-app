@@ -3,9 +3,9 @@ import session from "express-session";
 import RedisStore from "connect-redis";
 import dotenv from 'dotenv';
 
-dotenv.config();  
+dotenv.config({path: 'D:/Web dev/next_js/real_time_chat_app/server/.env'});  
 
-
+console.log(process.env.SESSION_SECRET);
 const sessionConfig = session({
     secret: process.env.SESSION_SECRET,
     credentials: true,
@@ -25,8 +25,9 @@ const wrap = (expressMiddleware) => (socket, next) =>
     expressMiddleware(socket.request,socket.request.session || {}, next);
 
 const corsConfig = {
-    origin: '*',
-    credentials: true,
-}
+  
+  origin: 'http://localhost:3000', 
+  credentials: true,
+};
 
 export  {sessionConfig, wrap, corsConfig};

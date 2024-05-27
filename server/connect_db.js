@@ -3,7 +3,7 @@ const { Pool } = pg;
 
 import dotenv from "dotenv";
 
-dotenv.config();
+dotenv.config({path: 'D:/Web dev/next_js/real_time_chat_app/server/.env'});
 
 const pool = new Pool({
     database: process.env.DATABASE_NAME,

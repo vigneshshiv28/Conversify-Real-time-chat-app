@@ -15,10 +15,7 @@ export default function Navbar() {
     const router = useRouter();
   
     const handleSelect = (index) => {
-      
       setSelected(index);
-      
-     
     };
     
   

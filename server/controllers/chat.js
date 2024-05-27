@@ -13,3 +13,5 @@ async function chat(socket,message){
 
     socket.to(message.to).emit("chat",parsedMessage);
 }
+
+export default chat;
